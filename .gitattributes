@@ -1,0 +1,2 @@
+checkpoint_iteration_1.pth filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
