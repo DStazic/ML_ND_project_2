@@ -1,0 +1,4 @@
+IMG*.JPG
+checkpoint.pth
+/flowers
+/flowers.zip
