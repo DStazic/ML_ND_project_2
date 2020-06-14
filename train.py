@@ -1,5 +1,6 @@
 from model import build_model
 import torch
+import os
 from torch import nn, optim
 from utilities import load_data, load_class_mapping, save_checkpoint
 from argparse import ArgumentParser
@@ -125,24 +126,24 @@ def apply_model(model, device, criterion, optimizer, train_dataloader, valid_dat
 
 if __name__ == "__main__":
     parser = ArgumentParser(__file__, description="train network")
-    parser.add_argument('path', type=str, help="path specifying dataset location")
+    parser.add_argument("path", type=str, help="path specifying dataset location")
+    parser.add_argument("--save_directory", "-s", type=str, default=None,
+                        help="always following structure: directory_name/file_name")
     parser.add_argument("--arch", "-a", type=str, default="vgg11")
     parser.add_argument("--learning_rate", "-lr", type=int, default=0.003)
     parser.add_argument("--epochs", "-e", type=int, default=20)
-    parser.add_argument("--hidden_units", "-u", nargs="*", type=int,
+    parser.add_argument("--hidden_units", "-u", nargs="*", type=int, default=[256, 128],
                         help="specify each layer size like this (e.g 3 layers): 512 256 256")
     parser.add_argument("--gpu", "-g", action="store_true", default=False)
-    parser.add_argument("--checkpoint_path", "-p", type=str, default="checkpoint.pth")
 
     args = parser.parse_args()
     data = load_data(args.path)
-    exit()
     idx_to_class = load_class_mapping("cat_to_name.json")
     model = build_model(args.arch, len(idx_to_class), args.hidden_units)
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     device = "cuda" if args.gpu else "cpu"
     metrics = apply_model(model, device, criterion, optimizer, data["train"], data["validation"], epochs=args.epochs)
-    save_checkpoint(model, args.checkpoint_path,
-                    arch=args.arch, epochs=args.epochs,
-                    class_mapping=idx_to_class, optimizer=optimizer.state_dict())
+    save_checkpoint(model, arch=args.arch,
+                    epochs=args.epochs, class_mapping=idx_to_class,
+                    optimizer=optimizer.state_dict(), save_dir=args.save_directory)

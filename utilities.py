@@ -6,7 +6,7 @@ from termcolor import colored
 import json
 import zipfile
 from model import Classifier, load_pretrained, get_classifier_representation
-from custom_exception import ModelLoadError
+from custom_exception import ModelLoadError, CheckpointDirectoryPathError
 
 # default_path = os.path.join(os.getcwd(), "flowers")
 default_path_data = os.path.abspath("flowers")
@@ -91,16 +91,19 @@ def load_class_idx_correction(file_name):
     return class_idx_correction
 
 
-def save_checkpoint(model, path, arch, **options):
+def save_checkpoint(model, arch, epochs, class_mapping, optimizer, save_dir):
     """
     Saves model checkpoint
 
     :param model: torch model class
-    :param path: str (filepath to be used for checkpoint)
     :param arch: str (pre-trained model architecture name)
-    :param options: optional information to be saved
+    :param epochs: int (number of epochs)
+    :param class_mapping: dict (dict for mapping class index to class names)
+    :param optimizer: dict (optimizer state dict)
+    :param save_dir: str (string specifying folder/file_name for checkpoint saving)
     :return:
     """
+
     classifier_representation = get_classifier_representation(model)
     classifier = model.__dict__["_modules"][classifier_representation]
 
@@ -108,17 +111,24 @@ def save_checkpoint(model, path, arch, **options):
                   'output_size': classifier.output_size,
                   'hidden_layers': [hl.out_features for hl in classifier.hidden_layers],
                   'state_dict': model.state_dict(),
-                  'arch': arch
+                  'arch': arch,
+                  'epochs': epochs,
+                  'class_to_idx': class_mapping,
+                  'optimizer_state': optimizer
                   }
+    print("SAVE DIR", save_dir, type(save_dir))
+    if not save_dir:
+        file_name = "checkpoint.pth"
+        print(f"no save directory provided. will save checkpoint ({file_name}) in current working dir")
+    else:
+        if "/" not in save_dir:
+            raise CheckpointDirectoryPathError
+        file_name = os.path.join(os.getcwd(), save_dir)
+        save_dir_path = os.path.dirname(file_name)
+        if not os.path.isdir(save_dir_path):
+            os.makedirs(save_dir_path)
 
-    if options.get("epochs"):
-        checkpoint["epochs"] = options.get("epochs")
-    if options.get("class_mapping"):
-        checkpoint['class_to_idx'] = options.get("class_mapping")
-    if options.get("optimizer"):
-        checkpoint['optimizer_state'] = options.get("optimizer")
-
-    torch.save(checkpoint, path)
+    torch.save(checkpoint, file_name)
 
 
 def load_checkpoint(filepath, gpu=False, arch=None):

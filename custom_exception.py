@@ -23,3 +23,11 @@ class ModelLoadError(Exception):
 
     def __str__(self):
         return colored(repr(self.msg), "red")
+
+
+class CheckpointDirectoryPathError(Exception):
+    def __init__(self):
+        self.msg = "Wrong checkpoint path structure... should be dir_path/file_path"
+
+    def __str__(self):
+        return colored(repr(self.msg), "red")
